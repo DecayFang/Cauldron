@@ -145,6 +145,9 @@ set(Shaders_GLTF_src
     ${CMAKE_CURRENT_SOURCE_DIR}/shaders/Skinning.hlsl
     ${CMAKE_CURRENT_SOURCE_DIR}/shaders/GLTFVertexFactory.hlsl
     ${CMAKE_CURRENT_SOURCE_DIR}/shaders/perFrameStruct.h
+    # MSR
+    ${CMAKE_CURRENT_SOURCE_DIR}/shaders/accumulate_and_upscale_pass.hlsl
+    ${CMAKE_CURRENT_SOURCE_DIR}/shaders/msr_global.hlsli
 )
 
 add_library (Cauldron_DX12 STATIC ${GLTF_src} ${PostProc_src} ${Base_src} ${Widgets_src} )
