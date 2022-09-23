@@ -1,12 +1,12 @@
-// SRVs
-Texture2D<float4> r_inputColor : register(t0);
-Texture2D<float> r_inputDepth : register(t1);
-Texture2D<float2> r_inputMotion : register(t2);
-
-// UAVs
-RWTexture2D<float4> rw_outputColor : register(u0);
-
 #include "msr_global.hlsli"
+
+void accumulateFrameColor(float4 currFrameUpsampledColor, inout float4 historyUpscaledColor)
+{
+	historyUpscaledColor.a += currFrameUpsampledColor.a;
+	float alpha = currFrameUpsampledColor.a / historyUpscaledColor.a;
+	historyUpscaledColor.rgb = lerp(currFrameUpsampledColor.rgb, historyUpscaledColor.rgb, alpha);
+	historyUpscaledColor.a = clamp(historyUpscaledColor.a, 0, 40);
+}
 
 [numthreads(8, 8, 1)]
 void mainCS(
@@ -16,12 +16,19 @@ void mainCS(
     int iGroupIndex : SV_GroupIndex)
 {
 	uint2 iHrPx = iDispatchThreadId;
-	float2 fLrPx = (float2(iHrPx) + float2(0.5, 0.5)) / upscaleFactor;
+	float2 fLrPx = (float2(iHrPx) + broadcast_f2(0.5)) / upscaleFactor;
 	float2 iLrPx = uint2(floor(fLrPx));
 	
+	// this uv can be used in jittered texture as if no jitter has happened
 	float2 unjitteredUv = (fLrPx + jitter) / float2(renderSize);
-	float4 unjitteredInputColor = r_inputColor.SampleLevel(s_linearClamp, unjitteredUv, 0);
+	// this position can be seen as jittered sampling position when rasterizing low res framebuffer
+	float2 jitteredSamplePos = float2(iLrPx) + broadcast_f2(0.5) - jitter;
 
-	rw_outputColor[iHrPx] = unjitteredInputColor;
+	float4 historyUpscaledColor = r_internalColor[iHrPx];
+	float4 currUpsampledColor = r_inputColor[iLrPx];
+	currUpsampledColor.a = 1.0;
+	accumulateFrameColor(currUpsampledColor, historyUpscaledColor);
+	rw_outputColor[iHrPx] = historyUpscaledColor;
+	rw_internalColor[iHrPx] = historyUpscaledColor;
 }
 
