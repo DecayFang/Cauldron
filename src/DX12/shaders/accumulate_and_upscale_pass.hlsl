@@ -4,7 +4,7 @@ void accumulateFrameColor(float4 currFrameUpsampledColor, inout float4 historyUp
 {
 	historyUpscaledColor.a += currFrameUpsampledColor.a;
 	float alpha = currFrameUpsampledColor.a / historyUpscaledColor.a;
-	historyUpscaledColor.rgb = lerp(currFrameUpsampledColor.rgb, historyUpscaledColor.rgb, alpha);
+	historyUpscaledColor.rgb = lerp(historyUpscaledColor.rgb, currFrameUpsampledColor.rgb, alpha);
 	historyUpscaledColor.a = clamp(historyUpscaledColor.a, 0, 40);
 }
 
